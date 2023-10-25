@@ -1,69 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'MusicScreen.dart';
 
-class CustomToast {
-  static void show(
-      BuildContext context,
-      String message, {
-        Color backgroundColor = Colors.black,
-        Color textColor = Colors.white,
-      }) {
-    final overlay = Overlay.of(context)!;
-    final toast = _buildToastWidget(message, backgroundColor, textColor);
-
-    OverlayEntry overlayEntry = OverlayEntry(
-      builder: (context) => toast,
-    );
-
-    overlay.insert(overlayEntry);
-
-    Future.delayed(Duration(seconds: 2), () {
-      overlayEntry.remove();
-    });
-  }
-
-  static Widget _buildToastWidget(
-      String message,
-      Color backgroundColor,
-      Color textColor,
-      ) {
-    return Positioned(
-      bottom: 16.0,
-      left: 16.0,
-      right: 16.0,
-      child: Material(
-        elevation: 4.0,
-        borderRadius: BorderRadius.circular(8.0),
-        child: Container(
-          padding: EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.greenAccent,
-                Colors.green,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Text(
-            message,
-            style: TextStyle(color: textColor),
-          ),
-        ),
-      ),
-    );
-  }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
 }
-
-void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Login Demo',
+      title: 'Flutter Music App',
       theme: ThemeData(
         primaryColor: Colors.black,
         scaffoldBackgroundColor: Colors.white,
@@ -75,6 +25,77 @@ class MyApp extends StatelessWidget {
         '/music': (context) => MusicScreen(),
       },
     );
+  }
+}
+
+class MusicScreen extends StatefulWidget {
+  @override
+  _MusicScreenState createState() => _MusicScreenState();
+}
+
+class _MusicScreenState extends State<MusicScreen> {
+  FirebaseService firebaseService = FirebaseService();
+
+  // Função para adicionar uma música no Firestore
+  void adicionarMusica() async {
+    await firebaseService.adicionarMusica("Nome da Música", "Artista da Música");
+  }
+
+  // Função para listar músicas do Firestore
+  void listarMusicas() async {
+    List<Map<String, dynamic>> musicas = await firebaseService.listarMusicas();
+    // Faça algo com a lista de músicas, como exibi-las na tela
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Músicas'),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                adicionarMusica();
+              },
+              child: Text('Adicionar Música'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.black),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                listarMusicas();
+              },
+              child: Text('Listar Músicas'),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.black),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FirebaseService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> adicionarMusica(String titulo, String artista) async {
+    await _firestore.collection('musicas').add({
+      'titulo': titulo,
+      'artista': artista,
+    });
+  }
+
+  Future<List<Map<String, dynamic>> > listarMusicas() async {
+    QuerySnapshot querySnapshot = await _firestore.collection('musicas').get();
+    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
   }
 }
 
@@ -179,7 +200,28 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
+  @override
+  _SignUpPageState createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  TextEditingController _nameController = TextEditingController();
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+
+  void _cadastrar(BuildContext context) {
+    String name = _nameController.text;
+    String email = _emailController.text;
+    String password = _passwordController.text;
+
+    // Lógica para processar o cadastro aqui
+    // Você pode usar o Firebase para criar uma conta de usuário
+
+    // Exemplo de exibição de mensagem de cadastro bem-sucedido
+    CustomToast.show(context, "Cadastro bem-sucedido.");
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,6 +249,7 @@ class SignUpPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 TextField(
+                  controller: _nameController,
                   decoration: InputDecoration(
                     labelText: 'Nome',
                     labelStyle: TextStyle(color: Colors.black),
@@ -215,6 +258,7 @@ class SignUpPage extends StatelessWidget {
                 ),
                 SizedBox(height: 20.0),
                 TextField(
+                  controller: _emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     labelStyle: TextStyle(color: Colors.black),
@@ -223,6 +267,7 @@ class SignUpPage extends StatelessWidget {
                 ),
                 SizedBox(height: 20.0),
                 TextField(
+                  controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Senha',
@@ -233,8 +278,7 @@ class SignUpPage extends StatelessWidget {
                 SizedBox(height: 20.0),
                 ElevatedButton(
                   onPressed: () {
-                    // Lógica para processar o cadastro aqui
-                    CustomToast.show(context, "Cadastro bem-sucedido.");
+                    _cadastrar(context);
                   },
                   child: Text('Cadastrar', style: TextStyle(color: Colors.white)),
                   style: ButtonStyle(
@@ -243,6 +287,62 @@ class SignUpPage extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CustomToast {
+  static void show(
+      BuildContext context,
+      String message, {
+        Color backgroundColor = Colors.black,
+        Color textColor = Colors.white,
+      }) {
+    final overlay = Overlay.of(context);
+    final toast = _buildToastWidget(message, backgroundColor, textColor);
+
+    OverlayEntry overlayEntry = OverlayEntry(
+      builder: (context) => toast,
+    );
+
+    overlay.insert(overlayEntry);
+
+    Future.delayed(Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
+  }
+
+  static Widget _buildToastWidget(
+      String message,
+      Color backgroundColor,
+      Color textColor,
+      ) {
+    return Positioned(
+      bottom: 16.0,
+      left: 16.0,
+      right: 16.0,
+      child: Material(
+        elevation: 4.0,
+        borderRadius: BorderRadius.circular(8.0),
+        child: Container(
+          padding: EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.greenAccent,
+                Colors.green,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          child: Text(
+            message,
+            style: TextStyle(color: textColor),
           ),
         ),
       ),

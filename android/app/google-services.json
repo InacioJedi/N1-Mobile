@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "412277053796",
+    "project_id": "music-n2",
+    "storage_bucket": "music-n2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:412277053796:android:33476471abdfb4cf13c271",
+        "android_client_info": {
+          "package_name": "com.example.n1musica"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyKedCESet_nWryO8aFu_uSnUWPOkeTH0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
