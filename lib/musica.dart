@@ -2,20 +2,20 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Musica {
   String id;
-  String titulo;
+  String musica;
   String artista;
 
-  Musica({required this.id, required this.titulo, required this.artista});
+  Musica({required this.id, required this.musica, required this.artista});
 
   Map<String, dynamic> toMap() {
     return {
-      'titulo': titulo,
+      'musica': musica,
       'artista': artista,
     };
   }
 
   Musica.fromSnapshot(DocumentSnapshot snapshot) :
         id = snapshot.id,
-        titulo = snapshot['titulo'],
+        musica = snapshot['musica'],
         artista = snapshot['artista'];
 }

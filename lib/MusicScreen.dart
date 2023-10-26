@@ -1,5 +1,29 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_service.dart';
+import 'add_music_screen.dart';
+import 'list_music_screen.dart';
+
+class Musica {
+  String id;
+  String musica;
+  String artista;
+
+  Musica({required this.id, required this.musica, required this.artista});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'musica': musica,
+      'artista': artista,
+    };
+  }
+
+  Musica.fromSnapshot(DocumentSnapshot snapshot) :
+        id = snapshot.id,
+        musica = snapshot['musica'],
+        artista = snapshot['artista'];
+}
 
 class MusicScreen extends StatefulWidget {
   @override
@@ -7,140 +31,143 @@ class MusicScreen extends StatefulWidget {
 }
 
 class _MusicScreenState extends State<MusicScreen> {
-  final assetsAudioPlayer = AssetsAudioPlayer();
-  bool isPlaying = false;
-  int currentTrackIndex = 0;
-
-  final Map<int, String> musicImages = {
-    0: 'assets/image/music1.png',
-    1: 'assets/image/music2.png',
-  };
-
-  String currentMusicImage = 'assets/image/music1.png';
-
-  // Defina as dimensões desejadas para as imagens
-  double larguraImagem = 200;
-  double alturaImagem = 200;
+  List<Musica> musicList = [];
+  TextEditingController titleController = TextEditingController();
+  TextEditingController artistController = TextEditingController();
+  late String selectedMusicId;
 
   @override
   void initState() {
     super.initState();
-
-    assetsAudioPlayer.open(
-      Playlist(audios: [
-        Audio('assets/music/musica1.mp3'),
-        Audio('assets/music/musica2.mp3'),
-      ]),
-      autoStart: false,
-      loopMode: LoopMode.playlist,
-    );
-
-    // Inicialmente, defina a imagem para a primeira música
-    currentMusicImage = musicImages[0] ?? 'assets/image/music1.png';
-
-    // Adicione um ouvinte para detectar quando a faixa de música atual muda
-    assetsAudioPlayer.current.listen((event) {
-      if (event != null) {
-        setState(() {
-          currentTrackIndex = event.index;
-          currentMusicImage = musicImages[currentTrackIndex] ??
-              'assets/image/music2.png';
-        });
-      }
-    });
+    loadMusicList();
   }
 
-  void togglePlayPause() {
-    if (isPlaying) {
-      assetsAudioPlayer.pause();
-    } else {
-      assetsAudioPlayer.play();
-    }
+  void loadMusicList() async {
+    List<Musica> musicas = await listarMusicas();
     setState(() {
-      isPlaying = !isPlaying;
+      musicList = musicas;
     });
-  }
-
-  void playNextTrack() {
-    assetsAudioPlayer.next();
-  }
-
-  void playPreviousTrack() {
-    assetsAudioPlayer.previous();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Player'),
-        backgroundColor: Colors.black,
+        title: Text('Gerenciar Músicas'),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Image.asset(
-            currentMusicImage,
-            width: 500,
-            height: 450,
-            fit: BoxFit.cover, // Ajuste de dimensionamento
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/add_music');
+            },
+            child: Text('Adicionar Música'),
           ),
-          Positioned(
-            top: 480,
-            left: 180,
-            right: 160,
-            child: Container(
-              width: 400,
-              height: 200,
-              color: Colors.white,
-              child: Text(
-                "Sweet Dreams", // Substitua pelo nome da música atual
-                style: TextStyle(
-                  fontSize: 25,
-                ),
-              ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/list_music');
+            },
+            child: Text('Listar Músicas'),
+          ),
+          Text('Lista de Músicas:'),
+          Expanded(
+            child: ListView.builder(
+              itemCount: musicList.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(musicList[index].musica),
+                  subtitle: Text(musicList[index].artista),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      deletarMusica(musicList[index].id);
+                      loadMusicList();
+                    },
+                  ),
+                  onTap: () {
+                    setState(() {
+                      selectedMusicId = musicList[index].id;
+                      titleController.text = musicList[index].musica;
+                      artistController.text = musicList[index].artista;
+                    });
+                  },
+                );
+              },
             ),
           ),
-          Column(
-            children: <Widget>[
-              Spacer(),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.skip_previous),
-                      onPressed: () {
-                        playPreviousTrack();
-                      },
-                    ),
-                    IconButton(
-                      icon: isPlaying
-                          ? Icon(Icons.pause)
-                          : Icon(Icons.play_arrow),
-                      onPressed: () {
-                        togglePlayPause();
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.skip_next),
-                      onPressed: () {
-                        playNextTrack();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Divider(),
+          Text('Adicionar/Editar Música:'),
+          TextField(
+            controller: titleController,
+            decoration: InputDecoration(labelText: 'Música'),
+          ),
+          TextField(
+            controller: artistController,
+            decoration: InputDecoration(labelText: 'Artista'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (selectedMusicId == false) {
+                adicionarMusica(Musica(
+                  musica: titleController.text,
+                  artista: artistController.text,
+                  id: '',
+                ));
+              } else {
+                atualizarMusica(Musica(
+                  id: selectedMusicId,
+                  musica: titleController.text,
+                  artista: artistController.text,
+                ));
+              }
+              loadMusicList();
+              titleController.clear();
+              artistController.clear();
+              selectedMusicId = ''; // Atribuição de null
+            },
+            child: Text('Salvar'),
           ),
         ],
       ),
     );
   }
+}
+class FirebaseService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  Future<void> adicionarMusica(String titulo, String artista) async {
+    await _firestore.collection('musicas').add({
+      'titulo': titulo,
+      'artista': artista,
+    });
+  }
+
+  Future<List<Map<String, dynamic>> > listarMusicas() async {
+    QuerySnapshot querySnapshot = await _firestore.collection('musicas').get();
+    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+  }
+}
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
   @override
-  void dispose() {
-    assetsAudioPlayer.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Music App',
+      theme: ThemeData(
+        primaryColor: Colors.black,
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => MusicScreen(),
+        '/add_music': (context) => AddMusicScreen(),
+        '/list_music': (context) => ListMusicScreen(),
+      },
+    );
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'MusicScreen.dart';
+import 'list_music_screen.dart';
+import 'add_music_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,79 +24,10 @@ class MyApp extends StatelessWidget {
         '/': (context) => LoginPage(),
         '/signup': (context) => SignUpPage(),
         '/music': (context) => MusicScreen(),
-      },
+        '/add_music': (context) => AddMusicScreen(), // Defina a rota para a tela de adicionar música
+         '/list_music': (context) => ListMusicScreen(), // Defina a rota para a tela de listar músicas
+  },
     );
-  }
-}
-
-class MusicScreen extends StatefulWidget {
-  @override
-  _MusicScreenState createState() => _MusicScreenState();
-}
-
-class _MusicScreenState extends State<MusicScreen> {
-  FirebaseService firebaseService = FirebaseService();
-
-  // Função para adicionar uma música no Firestore
-  void adicionarMusica() async {
-    await firebaseService.adicionarMusica("Nome da Música", "Artista da Música");
-  }
-
-  // Função para listar músicas do Firestore
-  void listarMusicas() async {
-    List<Map<String, dynamic>> musicas = await firebaseService.listarMusicas();
-    // Faça algo com a lista de músicas, como exibi-las na tela
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Músicas'),
-        backgroundColor: Colors.black,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                adicionarMusica();
-              },
-              child: Text('Adicionar Música'),
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.black),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                listarMusicas();
-              },
-              child: Text('Listar Músicas'),
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.black),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FirebaseService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  Future<void> adicionarMusica(String titulo, String artista) async {
-    await _firestore.collection('musicas').add({
-      'titulo': titulo,
-      'artista': artista,
-    });
-  }
-
-  Future<List<Map<String, dynamic>> > listarMusicas() async {
-    QuerySnapshot querySnapshot = await _firestore.collection('musicas').get();
-    return querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
   }
 }
 
@@ -116,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
     if (email.isEmpty || password.isEmpty) {
       // Exibir mensagem de erro personalizada
       CustomToast.show(context, "Por favor, preencha todos os campos.");
-    } else if (email == "inacio@gmail.com" && password == "senha123") {
+    } else if (email == "1" && password == "1") {
       // Login bem-sucedido
       // Você pode adicionar a navegação para a próxima tela aqui
       CustomToast.show(context, "Login bem-sucedido.");
